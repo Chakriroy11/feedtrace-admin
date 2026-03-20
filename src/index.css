@@ -1,0 +1,39 @@
+/* src/index.css */
+
+/* 1. RESET EVERYTHING */
+:root {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+}
+
+/* 2. KILL DEFAULT MARGINS & PADDING */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  width: 100%;
+  /* CHANGE: Use min-height instead of fixed height so it can grow */
+  min-height: 100vh; 
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow-x: hidden; /* Prevent horizontal scroll */
+  
+  /* CRITICAL FIX: Allow vertical scrolling */
+  overflow-y: auto;   
+}
+
+/* 3. FIX THE ROOT CONTAINER */
+#root {
+  width: 100%;
+  /* CHANGE: Remove fixed height here too */
+  min-height: 100vh; 
+  margin: 0 !important;
+  padding: 0 !important;
+  max-width: none !important;
+  text-align: left !important;
+  display: block !important;
+}

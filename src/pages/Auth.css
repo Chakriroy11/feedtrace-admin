@@ -1,0 +1,192 @@
+/* src/pages/Auth.css */
+
+/* --- 1. GLOBAL RESET (Crucial for removing gaps) --- */
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden; /* Prevents scrollbars */
+  box-sizing: border-box;
+}
+
+/* --- 2. MAIN CONTAINER --- */
+.auth-container {
+  display: flex;
+  width: 100vw;       /* Full Viewport Width */
+  height: 100vh;      /* Full Viewport Height */
+  background: white;
+  font-family: 'Inter', sans-serif;
+}
+
+/* --- 3. LEFT SIDE: IMAGE WALLPAPER --- */
+.auth-left {
+  flex: 1;            /* Takes exactly 50% width */
+  background-color: #0f172a; /* Fallback color */
+  padding: 0 !important;     /* Force zero padding */
+  margin: 0 !important;      /* Force zero margin */
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.auth-brand-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;  /* STRETCHES image to fill container perfectly */
+  object-position: center;
+  display: block;
+}
+
+/* --- 4. RIGHT SIDE: FORM --- */
+.auth-right {
+  flex: 1;            /* Takes exactly 50% width */
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 40px;      /* Internal padding for the form content only */
+}
+
+/* Form Card */
+.auth-card {
+  width: 100%;
+  max-width: 420px;
+}
+
+/* --- TYPOGRAPHY & COLORS --- */
+.auth-header {
+  margin-bottom: 30px;
+  text-align: left;
+}
+
+.auth-header h2 {
+  font-size: 2.5rem;
+  font-weight: 800;
+  margin: 0 0 10px 0;
+  /* Gradient Text */
+  background: linear-gradient(135deg, #0ea5e9 0%, #10b981 50%, #8b5cf6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  line-height: 1.2;
+}
+
+.auth-header p {
+  font-size: 1rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+/* --- INPUTS --- */
+.input-group {
+  position: relative;
+  margin-bottom: 20px;
+}
+
+.input-icon {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  z-index: 10;
+}
+
+.input-group input {
+  width: 100%;
+  padding: 14px 14px 14px 48px; /* Space for icon */
+  border: 2px solid #f1f5f9;
+  background: #f8fafc;
+  border-radius: 12px;
+  font-size: 1rem;
+  color: #334155;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.input-group input:focus {
+  border-color: #0ea5e9;
+  background: white;
+  box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.1);
+}
+
+.input-group input:focus ~ .input-icon {
+  color: #0ea5e9;
+}
+
+/* --- BUTTONS --- */
+.auth-btn {
+  width: 100%;
+  padding: 14px;
+  margin-top: 10px;
+  border: none;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: white;
+  cursor: pointer;
+  /* Matching Gradient */
+  background: linear-gradient(90deg, #0ea5e9 0%, #22c55e 50%, #8b5cf6 100%);
+  background-size: 200% auto;
+  transition: all 0.3s ease;
+}
+
+.auth-btn:hover {
+  background-position: right center;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px -4px rgba(14, 165, 233, 0.4);
+}
+
+/* --- FOOTER --- */
+.auth-footer {
+  margin-top: 25px;
+  text-align: center;
+  color: #64748b;
+  font-size: 0.95rem;
+}
+
+.link-text {
+  cursor: pointer;
+  font-weight: 700;
+  color: #8b5cf6;
+  margin-left: 5px;
+  transition: color 0.2s;
+}
+
+.link-text:hover {
+  text-decoration: underline;
+  color: #7c3aed;
+}
+
+/* --- RESPONSIVE --- */
+@media (max-width: 900px) {
+  .auth-left { display: none; }
+}
+/* --- ANIMATIONS --- */
+
+/* The Container for the Form */
+.fade-in-form {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  animation: slideUpFade 0.5s ease-out forwards;
+}
+
+@keyframes slideUpFade {
+  0% {
+    opacity: 0;
+    transform: translateY(20px); /* Starts slightly lower */
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Optional: Smooth Image Transition if you change images later */
+.auth-brand-img {
+  transition: all 0.5s ease;
+}
