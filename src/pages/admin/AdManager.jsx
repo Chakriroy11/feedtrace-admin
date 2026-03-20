@@ -10,6 +10,12 @@ const AdManager = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
+  // 🛡️ API URL Helper: Ensures no trailing slashes or undefined errors
+  const getBaseUrl = () => {
+    const base = import.meta.env.VITE_API_URL || 'https://feedtrace-api.onrender.com';
+    return base.replace(/\/$/, '');
+  };
+
   const [formData, setFormData] = useState({
     sponsorName: '',
     couponCode: '',
@@ -17,17 +23,17 @@ const AdManager = () => {
     bannerImage: '' 
   });
 
-  // 🌟 FETCH ALL ADS (Synced with backend /all route)
   const fetchAds = async () => {
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/ads/all`);
+      // 🚀 FIXED: Backticks and Clean Base URL
+      const res = await fetch(`${getBaseUrl()}/api/ads/all`);
       if (res.ok) {
         const data = await res.json();
         setAds(Array.isArray(data) ? data : []);
       }
     } catch (err) {
       console.error(err);
-      toast.error("Failed to load ads from Atlas.");
+      toast.error("Failed to load campaigns.");
     } finally {
       setLoading(false);
     }
@@ -40,7 +46,6 @@ const AdManager = () => {
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // Limit file size to 2MB for Atlas/Render stability
       if (file.size > 2 * 1024 * 1024) {
         toast.error("Logo must be under 2MB");
         return;
@@ -62,7 +67,8 @@ const AdManager = () => {
     }
     setSubmitting(true);
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/ads/add`, {
+      // 🚀 FIXED: Backticks and Clean Base URL
+      const res = await fetch(`${getBaseUrl()}/api/ads/add`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
@@ -86,7 +92,8 @@ const AdManager = () => {
 
   const handleToggle = async (id, currentStatus) => {
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/ads/${id}/toggle`, { 
+      // 🚀 FIXED: Backticks and Clean Base URL
+      const res = await fetch(`${getBaseUrl()}/api/ads/${id}/toggle`, { 
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -102,7 +109,8 @@ const AdManager = () => {
   const handleDelete = async (id) => {
     if (!window.confirm("Delete this campaign permanently?")) return;
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/ads/${id}`, { 
+      // 🚀 FIXED: Backticks and Clean Base URL
+      const res = await fetch(`${getBaseUrl()}/api/ads/${id}`, { 
         method: 'DELETE' 
       });
       if (res.ok) {
@@ -152,22 +160,23 @@ const AdManager = () => {
               <div 
                 onClick={() => document.getElementById('adLogoUpload').click()} 
                 style={{ 
-                  height: '120px', 
+                  height: '140px', 
                   border: '2px dashed #cbd5e1', 
-                  borderRadius: '16px', 
+                  borderRadius: '20px', 
                   cursor: 'pointer', 
                   display: 'flex', 
                   flexDirection: 'column',
                   alignItems: 'center', 
                   justifyContent: 'center', 
-                  background: formData.bannerImage ? `url(${formData.bannerImage}) center/contain no-repeat` : '#f8fafc',
-                  transition: 'all 0.2s ease'
+                  background: formData.bannerImage ? `url(${formData.bannerImage}) center/contain no-repeat white` : '#f8fafc',
+                  transition: 'all 0.2s ease',
+                  boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)'
                 }}
               >
                 {!formData.bannerImage && (
                   <>
-                    <ImageIcon size={28} color="#94a3b8" />
-                    <span style={{ fontSize: '0.7rem', color: '#94a3b8', marginTop: '8px' }}>Click to upload</span>
+                    <ImageIcon size={32} color="#94a3b8" />
+                    <span style={{ fontSize: '0.8rem', color: '#94a3b8', marginTop: '8px', fontWeight: '600' }}>Upload Sponsor Logo</span>
                   </>
                 )}
               </div>
@@ -178,61 +187,64 @@ const AdManager = () => {
               ...submitBtnStyle,
               background: submitting ? '#64748b' : '#0f172a',
             }}>
-              {submitting ? 'Creating Campaign...' : '🚀 Launch Campaign'}
+              {submitting ? <><Loader2 className="animate-spin" size={20}/> Launching...</> : '🚀 Launch Campaign'}
             </button>
           </form>
         </div>
 
         {/* --- RIGHT: CAMPAIGN DASHBOARD --- */}
         <div>
-          <h3 style={{ margin: '0 0 20px 0', color: '#0f172a', fontSize: '1.25rem', fontWeight: '800' }}>Live Performance</h3>
+          <h3 style={{ margin: '0 0 20px 0', color: '#0f172a', fontSize: '1.25rem', fontWeight: '800' }}>Active Campaigns</h3>
           
           {loading ? (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '200px' }}>
-              <Loader2 className="animate-spin" size={32} color="#3b82f6" />
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '300px' }}>
+              <Loader2 className="animate-spin" size={40} color="#3b82f6" />
             </div>
           ) : ads.length === 0 ? (
-            <div style={{ background: 'white', padding: '60px 20px', borderRadius: '24px', textAlign: 'center', border: '1px dashed #cbd5e1' }}>
-              <p style={{ color: '#64748b', fontWeight: '500' }}>No active campaigns in Atlas database.</p>
+            <div style={{ background: 'white', padding: '80px 20px', borderRadius: '28px', textAlign: 'center', border: '2px dashed #e2e8f0' }}>
+              <ImageIcon size={48} color="#cbd5e1" style={{marginBottom: '15px'}}/>
+              <p style={{ color: '#64748b', fontWeight: '600', fontSize: '1.1rem' }}>No active campaigns in database.</p>
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               {ads.map(ad => (
                 <div key={ad._id} style={{ 
                   display: 'flex', 
                   flexDirection: isMobile ? 'column' : 'row', 
                   alignItems: 'center', 
-                  gap: '20px', 
+                  gap: '24px', 
                   background: 'white', 
-                  padding: '20px', 
-                  borderRadius: '24px', 
-                  border: '1px solid #e2e8f0', 
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
-                  opacity: ad.isActive ? 1 : 0.7 
+                  padding: '24px', 
+                  borderRadius: '28px', 
+                  border: '1px solid #f1f5f9', 
+                  boxShadow: '0 10px 15px -3px rgba(0,0,0,0.03)',
+                  opacity: ad.isActive ? 1 : 0.65,
+                  transition: 'all 0.3s ease'
                 }}>
                   
                   {/* Logo Container */}
                   <div style={{ 
-                    width: isMobile ? '100%' : '100px', 
-                    height: isMobile ? '150px' : '100px', 
-                    background: '#f1f5f9', 
-                    borderRadius: '16px', 
+                    width: isMobile ? '100%' : '110px', 
+                    height: isMobile ? '160px' : '110px', 
+                    background: '#f8fafc', 
+                    borderRadius: '20px', 
                     display: 'flex', 
                     alignItems: 'center', 
                     justifyContent: 'center', 
-                    padding: '10px'
+                    padding: '12px',
+                    border: '1px solid #f1f5f9'
                   }}>
                     <img src={ad.bannerImage} alt="logo" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
                   </div>
 
                   {/* Campaign Info */}
                   <div style={{ flex: 1, textAlign: isMobile ? 'center' : 'left' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'center' : 'space-between', marginBottom: '10px' }}>
-                      <span style={{ fontWeight: '800', color: '#0f172a', fontSize: '1.2rem' }}>{ad.sponsorName}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'center' : 'space-between', marginBottom: '8px' }}>
+                      <span style={{ fontWeight: '900', color: '#0f172a', fontSize: '1.3rem', letterSpacing: '-0.5px' }}>{ad.sponsorName}</span>
                     </div>
-                    <div style={{ color: '#475569', fontSize: '1rem', marginBottom: '10px', fontWeight: '600' }}>{ad.discountText}</div>
-                    <div style={{ display: 'inline-block', background: '#f0f9ff', color: '#0369a1', padding: '8px 16px', borderRadius: '12px', fontSize: '0.85rem', fontWeight: '800', border: '1.5px dashed #0ea5e9' }}>
-                      CODE: {ad.couponCode?.toUpperCase()}
+                    <div style={{ color: '#475569', fontSize: '1rem', marginBottom: '12px', fontWeight: '600', lineHeight: 1.4 }}>{ad.discountText}</div>
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#eff6ff', color: '#2563eb', padding: '10px 18px', borderRadius: '14px', fontSize: '0.9rem', fontWeight: '900', border: '1.5px dashed #3b82f6' }}>
+                      <Tag size={16}/> {ad.couponCode?.toUpperCase()}
                     </div>
                   </div>
 
@@ -240,14 +252,14 @@ const AdManager = () => {
                   <div style={{ 
                     display: 'flex', 
                     flexDirection: isMobile ? 'row' : 'column', 
-                    gap: '10px', 
-                    width: isMobile ? '100%' : '120px' 
+                    gap: '12px', 
+                    width: isMobile ? '100%' : '130px' 
                   }}>
-                    <button onClick={() => handleToggle(ad._id, ad.isActive)} style={{ ...actionBtnStyle, flex: 1, background: ad.isActive ? '#fee2e2' : '#dcfce7', color: ad.isActive ? '#dc2626' : '#16a34a' }}>
+                    <button onClick={() => handleToggle(ad._id, ad.isActive)} style={{ ...actionBtnStyle, flex: 1, background: ad.isActive ? '#fff1f2' : '#f0fdf4', color: ad.isActive ? '#e11d48' : '#16a34a', border: ad.isActive ? '1px solid #fecaca' : '1px solid #bbf7d0' }}>
                       <Power size={16}/> {ad.isActive ? 'Pause' : 'Start'}
                     </button>
-                    <button onClick={() => handleDelete(ad._id)} style={{ ...actionBtnStyle, flex: 1, background: '#f8fafc', border: '1px solid #e2e8f0', color: '#64748b' }}>
-                      <Trash2 size={16}/> Delete
+                    <button onClick={() => handleDelete(ad._id)} style={{ ...actionBtnStyle, flex: 1, background: 'white', border: '1px solid #e2e8f0', color: '#64748b' }}>
+                      <Trash2 size={16}/> Remove
                     </button>
                   </div>
                 </div>
@@ -261,9 +273,9 @@ const AdManager = () => {
 };
 
 // Styles
-const labelStyle = { display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', fontWeight: '900', marginBottom: '8px', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' };
-const inputStyle = { width: '100%', padding: '14px 18px', borderRadius: '14px', border: '1px solid #e2e8f0', outline: 'none', fontSize: '1rem', boxSizing: 'border-box', background: '#f8fafc', transition: 'border-color 0.2s ease' };
-const submitBtnStyle = { width: '100%', padding: '18px', color: 'white', border: 'none', borderRadius: '16px', fontSize: '1.1rem', fontWeight: '800', cursor: 'pointer', marginTop: '10px', transition: 'transform 0.1s ease' };
-const actionBtnStyle = { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px', borderRadius: '14px', cursor: 'pointer', fontWeight: '800', fontSize: '0.85rem', border: 'none' };
+const labelStyle = { display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', fontWeight: '900', marginBottom: '8px', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.8px' };
+const inputStyle = { width: '100%', padding: '16px', borderRadius: '16px', border: '1.5px solid #f1f5f9', outline: 'none', fontSize: '1rem', boxSizing: 'border-box', background: '#f8fafc', transition: 'all 0.2s ease', fontWeight: '500' };
+const submitBtnStyle = { width: '100%', padding: '20px', color: 'white', border: 'none', borderRadius: '18px', fontSize: '1.1rem', fontWeight: '900', cursor: 'pointer', marginTop: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' };
+const actionBtnStyle = { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '14px', borderRadius: '14px', cursor: 'pointer', fontWeight: '800', fontSize: '0.85rem' };
 
 export default AdManager;
