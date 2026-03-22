@@ -11,29 +11,37 @@ const ReviewManager = () => {
   const [loading, setLoading] = useState(true);
   const [selectedReview, setSelectedReview] = useState(null); 
 
+  // 🌍 Global API URL fallback
+  const BASE_URL = import.meta.env.VITE_API_URL || 'https://feedtrace-api.onrender.com';
+
   // --- FIXED FETCH FUNCTION ---
   const fetchReviewsAndAlerts = async () => {
     try {
-      // 🌟 FIX: Used backticks (`) to allow template literals to work
-      const [revRes, alertRes] = await Promise.all([
-        fetch(`${import.meta.env.VITE_API_URL}/api/reviews/all`),
-        fetch(`${import.meta.env.VITE_API_URL}/api/reviews/notifications`)
+      // 🌟 Using allSettled so one 404 doesn't crash the other request
+      const [revRes, alertRes] = await Promise.allSettled([
+        fetch(`${BASE_URL}/api/reviews/all`),
+        fetch(`${BASE_URL}/api/reviews/notifications`)
       ]);
       
-      // Check if response is actually JSON before parsing
-      if (!revRes.ok || !alertRes.ok) {
-        throw new Error(`Server Error: ${revRes.status}`);
+      // Process Reviews
+      if (revRes.status === 'fulfilled' && revRes.value.ok) {
+        const revData = await revRes.value.json();
+        if (Array.isArray(revData)) setReviews(revData);
+      } else {
+        console.warn("Reviews API failed or returned 404");
       }
 
-      const revData = await revRes.json();
-      const alertData = await alertRes.json();
-      
-      if (Array.isArray(revData)) setReviews(revData);
-      if (Array.isArray(alertData)) setAlerts(alertData);
+      // Process Alerts
+      if (alertRes.status === 'fulfilled' && alertRes.value.ok) {
+        const alertData = await alertRes.value.json();
+        if (Array.isArray(alertData)) setAlerts(alertData);
+      } else {
+        console.warn("Notifications API failed or returned 404");
+      }
+
     } catch (err) { 
       console.error("Fetch Error:", err); 
-      // This usually happens if the URL in .env is wrong or server is down
-      toast.error("Failed to load data. Check backend connection.");
+      toast.error("Connectivity issue. Check backend status.");
     } finally { 
       setLoading(false); 
     }
@@ -47,29 +55,31 @@ const ReviewManager = () => {
     if (!window.confirm(`Mark this review as ${newStatus}?`)) return;
     const isVerified = newStatus === 'approved'; 
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/reviews/status/${id}`, {
+      const res = await fetch(`${BASE_URL}/api/reviews/status/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus, isVerifiedPurchase: isVerified })
       });
       if (res.ok) {
-        setReviews(reviews.map(r => r._id === id ? { ...r, status: newStatus } : r));
+        setReviews(prev => prev.map(r => r._id === id ? { ...r, status: newStatus } : r));
         setSelectedReview(null); 
         toast.success(`Review marked as ${newStatus}!`);
+      } else {
+        toast.error("Failed to update status on server.");
       }
     } catch (err) { toast.error("Error updating status"); }
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("⚠️ Delete this review?")) return;
+    if (!window.confirm("⚠️ Delete this review permanently?")) return;
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/reviews/delete/${id}`, { method: 'DELETE' });
+      const res = await fetch(`${BASE_URL}/api/reviews/delete/${id}`, { method: 'DELETE' });
       if (res.ok) {
-        setReviews(reviews.filter(review => review._id !== id));
+        setReviews(prev => prev.filter(review => review._id !== id));
         setSelectedReview(null);
         toast.success("Review deleted.");
       }
-    } catch (err) { toast.error("Server Error"); }
+    } catch (err) { toast.error("Server Error during deletion"); }
   };
 
   const getStatusColor = (status) => {
@@ -113,7 +123,9 @@ const ReviewManager = () => {
       {/* 3. REVIEW CARDS */}
       <div style={{display:'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(320px, 1fr))', gap: isMobile ? '15px' : '20px'}}>
         {loading ? (
-          <p>Loading FeedTrace Data...</p>
+          <p style={{ textAlign: 'center', gridColumn: '1 / -1', padding: '40px', color: '#64748b' }}>Connecting to FeedTrace API...</p>
+        ) : reviews.length === 0 ? (
+          <p style={{ textAlign: 'center', gridColumn: '1 / -1', padding: '40px', color: '#64748b' }}>No reviews found in database.</p>
         ) : (
           reviews.map((review) => (
             <div key={review._id} style={{background:'white', padding: isMobile ? '15px' : '20px', borderRadius:'16px', border:'1px solid #e2e8f0', display:'flex', flexDirection:'column', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)'}}>
@@ -127,7 +139,7 @@ const ReviewManager = () => {
                   <span style={{ fontSize:'0.65rem', fontWeight:'800', color: 'white', background: getStatusColor(review.status), padding:'3px 8px', borderRadius:'20px' }}>
                     {review.status}
                   </span>
-                  <button onClick={() => handleDelete(review._id)} style={{ background: '#fee2e2', border: 'none', color: '#ef4444', padding: '6px', borderRadius: '8px' }}><Trash2 size={14} /></button>
+                  <button onClick={() => handleDelete(review._id)} style={{ background: '#fee2e2', border: 'none', color: '#ef4444', padding: '6px', borderRadius: '8px', cursor: 'pointer' }}><Trash2 size={14} /></button>
                 </div>
               </div>
 
@@ -145,7 +157,7 @@ const ReviewManager = () => {
                       <div style={{fontSize:'0.7rem', fontWeight:'800', color:'#334155'}}>Bill Score</div>
                       <div style={{fontSize:'0.85rem', color: review.trustScore < 40 ? '#ef4444' : '#10b981', fontWeight: '900'}}>{review.trustScore || 0}/100</div>
                     </div>
-                    <button onClick={() => setSelectedReview(review)} style={{color:'white', background: '#3b82f6', border: 'none', padding:'8px 12px', borderRadius: '10px', fontWeight: '800', fontSize: '0.75rem', display: 'flex', gap: '5px', alignItems: 'center'}}>
+                    <button onClick={() => setSelectedReview(review)} style={{color:'white', background: '#3b82f6', border: 'none', padding:'8px 12px', borderRadius: '10px', fontWeight: '800', fontSize: '0.75rem', display: 'flex', gap: '5px', alignItems: 'center', cursor: 'pointer'}}>
                       <Eye size={14}/> View
                     </button>
                   </>
@@ -156,8 +168,8 @@ const ReviewManager = () => {
 
               {review.status === 'pending' && (
                 <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'10px'}}>
-                  <button onClick={() => handleStatus(review._id, 'approved')} style={{ background:'#16a34a', color:'white', border:'none', padding:'12px', borderRadius:'10px', fontSize:'0.8rem', fontWeight:'800' }}>Approve</button>
-                  <button onClick={() => handleStatus(review._id, 'rejected')} style={{ background:'#dc2626', color:'white', border:'none', padding:'12px', borderRadius:'10px', fontSize:'0.8rem', fontWeight:'800' }}>Reject</button>
+                  <button onClick={() => handleStatus(review._id, 'approved')} style={{ background:'#16a34a', color:'white', border:'none', padding:'12px', borderRadius:'10px', fontSize:'0.8rem', fontWeight:'800', cursor: 'pointer' }}>Approve</button>
+                  <button onClick={() => handleStatus(review._id, 'rejected')} style={{ background:'#dc2626', color:'white', border:'none', padding:'12px', borderRadius:'10px', fontSize:'0.8rem', fontWeight:'800', cursor: 'pointer' }}>Reject</button>
                 </div>
               )}
             </div>
@@ -198,8 +210,8 @@ const ReviewManager = () => {
 
                 {selectedReview.status === 'pending' && (
                   <div style={{ display: 'flex', gap: '10px', marginTop: 'auto' }}>
-                    <button onClick={() => handleStatus(selectedReview._id, 'approved')} style={{ flex: 1, padding: '14px', background: '#10b981', color: 'white', border: 'none', borderRadius: '12px', fontWeight: '800' }}>Approve</button>
-                    <button onClick={() => handleStatus(selectedReview._id, 'rejected')} style={{ flex: 1, padding: '14px', background: '#ef4444', color: 'white', border: 'none', borderRadius: '12px', fontWeight: '800' }}>Reject</button>
+                    <button onClick={() => handleStatus(selectedReview._id, 'approved')} style={{ flex: 1, padding: '14px', background: '#10b981', color: 'white', border: 'none', borderRadius: '12px', fontWeight: '800', cursor: 'pointer' }}>Approve</button>
+                    <button onClick={() => handleStatus(selectedReview._id, 'rejected')} style={{ flex: 1, padding: '14px', background: '#ef4444', color: 'white', border: 'none', borderRadius: '12px', fontWeight: '800', cursor: 'pointer' }}>Reject</button>
                   </div>
                 )}
               </div>
